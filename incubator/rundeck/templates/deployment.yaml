@@ -29,29 +29,6 @@ spec:
       securityContext:
         fsGroup: 1000
       containers:
-        - name: nginx
-          image: nginx:stable
-          ports:
-            - name: http
-              containerPort: 80
-              protocol: TCP
-              livenessProbe:
-                httpGet:
-                  path: /
-                  port: 80
-                  scheme: HTTP
-                initialDelaySeconds: 60
-                periodSeconds: 120
-              readinessProbe:
-                httpGet:
-                  path: /
-                  port: 80
-                  scheme: HTTP
-                initialDelaySeconds: 10
-                periodSeconds: 5
-          volumeMounts:
-            - name: nginx-config
-              mountPath: /etc/nginx
         - name: {{ .Chart.Name }}
           command:
           - /bin/sh
@@ -62,13 +39,6 @@ spec:
           envFrom:
           - configMapRef:
               name: {{ .Release.Name }}-environment-configmap
-          env:
-            - name: RUNDECK_GRAILS_URL
-              value: {{ .Values.rundeck.env.RUNDECK_GRAILS_URL }}
-            - name: RUNDECK_SERVER_FORWARDED
-              value: "true"
-            - name: RUNDECK_LOGGING_STRATEGY
-              value: "CONSOLE"
           volumeMounts:
           - name: data
             mountPath: /home/rundeck/server/data
@@ -81,11 +51,16 @@ spec:
           - name: aws-credentials
             mountPath: /home/rundeck/.aws/credentials
         {{- end }}
+        {{- if .Values.rundeck.customConfig }}
+          - mountPath: /etc/remco/templates/rundeck-config.properties
+            name: rundeck-config
+            subPath: rundeck-config.properties
+        {{- end }}
           ports:
             - name: rundeck
               containerPort: 4440
           livenessProbe:
-            httpGet:  
+            httpGet:
               path: /
               port: 4440
               scheme: HTTP
@@ -101,21 +76,13 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
-        - name: nginx-config
-          configMap:
-            name: {{ .Release.Name }}-nginx-configmap
-            items:
-              - key: nginx.conf
-                path: nginx.conf
         - name: data
-        {{- if .Values.rundeck.awsVolumeId }}
-          # This AWS EBS volume must already exist.
-          awsElasticBlockStore:
-            volumeID: {{ .Values.rundeck.awsVolumeId }}
-            fsType: ext4
+        {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaimLib | default (printf "%s-lib" ( include "rundeck.fullname" . )) }}
         {{- else }}
           emptyDir: {}
-        {{- end }}  
+        {{- end }}
         {{- if .Values.rundeck.sshSecrets }}
         - name: sshkeys
           secret:
@@ -125,6 +92,12 @@ spec:
         - name: aws-credentials
           secret:
             secretName: {{ .Values.rundeck.awsCredentialsSecret}}
+        {{- end }}
+        {{- if .Values.rundeck.custonConfig }}
+        - configMap:
+            defaultMode: 511
+            name: {{ include "rundeck.fullname" . }}
+          name: rundeck-config
         {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

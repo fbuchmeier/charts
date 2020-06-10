@@ -17,7 +17,7 @@ Parameter | Description | Default
 replicaCount | How many replicas to run. Riemann can really only work with one. | 1
 annotations | You can pass annotations inside .spec.template.metadata.annotations. Every value under this is iterated as a key/value and used as a parameter. Useful for KIAM/Kube2IAM and others for example. | ""
 image.repository | Name of the image to run, without the tag. | [rundeck/rundeck](https://github.com/rundeck/rundeck)
-image.tag | The image tag to use. | 3.0.16
+image.tag | The image tag to use. | 3.2.8
 image.pullPolicy | The kubernetes image pull policy. | IfNotPresent
 service.type | The kubernetes service type to use. | ClusterIP
 service.port | The tcp port the service should listen on. | 80
@@ -27,4 +27,5 @@ rundeck.adminUser | The config to set up the admin user that should be placed at
 rundeck.env | The rundeck environment variables that you would want to set | Default variables provided in docker file
 rundeck.sshSecrets | A reference to the Kubernetes Secret that contains the ssh keys. | ""
 rundeck.awsCredentialsSecret | A reference to the Kubernetes Secret that contains the aws credentials. | ""
-rundeck.awsVolumeId | A Volume ID from a pre-existent AWS EBS volume to persist Rundeck data from /home/rundeck/server/data path. | "" 
+
+If you want to use persistent storage for Rundeck, check out the `persistence` section in [values.yaml](./values.yaml) for more information on how to do this.

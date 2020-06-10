@@ -1,0 +1,11 @@
+# Overwrite the default remco templates with this configmap
+{{- if .Values.rundeck.customConfig }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-rundeck-configmap
+type: Opaque
+data:
+  rundeck-config.properties: |-
+{{ .Files.Get "files/rundeck/rundeck-config.proprties" | indent 4 }}
+{{- end }}
